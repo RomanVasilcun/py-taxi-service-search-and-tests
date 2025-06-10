@@ -100,8 +100,8 @@ class CoreFeaturesTest(TestCase):
             reverse("taxi:driver-create"),
             {
                 "username": "invalidlicense",
-                "password1": "password1",
-                "password2": "password1",
+                "password1": "VeryStrongPassword123!@#",
+                "password2": "VeryStrongPassword123!@#",
                 "license_number": "invalid",
                 "first_name": "Test",
                 "last_name": "User",
@@ -115,7 +115,8 @@ class CoreFeaturesTest(TestCase):
         )
         self.assertContains(
             response,
-            "License number must be 8 characters",
+            "License number must consist of "
+            "3 uppercase letters followed by 5 digits.",
         )
 
     def test_create_driver_duplicate_license_number(self):
@@ -170,7 +171,8 @@ class CoreFeaturesTest(TestCase):
         )
         self.assertContains(
             response,
-            "License number should consist of 8 characters",
+            "The license number must consist of "
+            "3 capital letters and 5 digits.",
         )
 
     def test_delete_driver(self):

@@ -1,7 +1,10 @@
+import re
+
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
 from django.core.exceptions import ValidationError
+from django.core.validators import MinLengthValidator
 
 from taxi.models import Car, Driver
 
@@ -18,6 +21,14 @@ class CarForm(forms.ModelForm):
 
 
 class DriverCreationForm(UserCreationForm):
+    license_number = forms.CharField(
+        max_length=8,
+        validators=[
+            MinLengthValidator(8,
+                               "License number must "
+                               "be 8 characters long.")],
+        label="License number")
+
     class Meta(UserCreationForm.Meta):
         model = Driver
         fields = UserCreationForm.Meta.fields + (
@@ -26,8 +37,12 @@ class DriverCreationForm(UserCreationForm):
             "last_name",
         )
 
-    def clean_license_number(self):  # this logic is optional, but possible
-        return validate_license_number(self.cleaned_data["license_number"])
+    def clean_license_number(self):
+        license_number = self.cleaned_data["license_number"]
+        if Driver.objects.filter(license_number=license_number).exists():
+            raise forms.ValidationError("A driver's license "
+                                        "with this number already exists.")
+        return license_number
 
 
 class DriverLicenseUpdateForm(forms.ModelForm):
@@ -42,11 +57,19 @@ class DriverLicenseUpdateForm(forms.ModelForm):
 def validate_license_number(
     license_number,
 ):  # regex validation is also possible here
-    if len(license_number) != 8:
-        raise ValidationError("License number should consist of 8 characters")
-    elif not license_number[:3].isupper() or not license_number[:3].isalpha():
-        raise ValidationError("First 3 characters should be uppercase letters")
-    elif not license_number[3:].isdigit():
-        raise ValidationError("Last 5 characters should be digits")
+    if not re.match(r"^[A-Z]{3}\d{5}$", license_number):
+        if len(license_number) != 8:
+            raise ValidationError(
+                "License number should consist of 8 characters"
+            )
+        elif not license_number[:3].isupper(
+
+        ) or not license_number[:3].isalpha():
+            raise ValidationError("First 3 characters should "
+                                  "be uppercase letters")
+        elif not license_number[3:].isdigit():
+            raise ValidationError("Last 5 characters should be digits")
+        raise ValidationError("The license number must consist of 3 "
+                              "capital letters and 5 digits.")
 
     return license_number

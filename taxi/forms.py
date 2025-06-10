@@ -4,7 +4,7 @@ from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
 from django.core.exceptions import ValidationError
-from django.core.validators import MinLengthValidator
+from django.core.validators import MinLengthValidator, RegexValidator
 
 from taxi.models import Car, Driver
 
@@ -20,13 +20,22 @@ class CarForm(forms.ModelForm):
         fields = "__all__"
 
 
+license_number_validator = RegexValidator(
+    regex=r"^[A-Z]{3}\d{5}$",
+    message="License number must consist of "
+            "3 uppercase letters followed by 5 digits."
+)
+
+
 class DriverCreationForm(UserCreationForm):
     license_number = forms.CharField(
         max_length=8,
         validators=[
             MinLengthValidator(8,
                                "License number must "
-                               "be 8 characters long.")],
+                               "be 8 characters long."),
+            license_number_validator
+        ],
         label="License number")
 
     class Meta(UserCreationForm.Meta):
